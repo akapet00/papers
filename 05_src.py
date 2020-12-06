@@ -84,7 +84,7 @@ def cco(k, ic, *args):
     return (x_prime, y_prime, z_prime, w_prime)
 
 
-def cco_jacobian(k, ic, *args):
+def cco_jacobian(k, x, y, z, w, *args):
     """Jacobian matrix of Bao's implementation of the canonical Chua's
     oscillator with flux-controlled memristor ODE system.
     
@@ -94,27 +94,31 @@ def cco_jacobian(k, ic, *args):
 
     Params
     ------
-    ic : list or tuple
-        initial conditions for x, y, z and w, respectively
-    k : numpy.ndarray
-        time scale factor as a solution domain
+    k : float
+        time point
+    x : float
+        value of x in k-th time point
+    y : float
+        value of y in k-th time point
+    z : float
+        value of z in k-th time point
+    w : float
+        value of w in k-th time point
     args : list or tuple
         constants a, b, alpha, beta, gamma and L, respectively
 
     Returns
     -------
-    tuple
+    numpy.ndarray
         Jacobian matrix at the equilibirium
     """
-    x, y, z, w = ic
     a, b, alpha, beta, gamma, L = args
-    J = np.array([
+    return np.array([
         [-k*alpha*W(w, a, b), k*alpha,  0,        -6*k*alpha*b*x*w],
         [-k,                  0,        k,         0              ],
         [0,                  -k/L*beta, k/L*gamma, 0              ],
         [k,                   0,        0,         0              ]
     ])
-    return J
 
 
 def solve_cco(k, ic, args):
@@ -147,6 +151,7 @@ def solve_cco(k, ic, args):
     return (x, y, z, w)
 
 
+# configure parameters as in the paper
 a = 0.2
 b = 1
 alpha = 1
@@ -155,7 +160,7 @@ gamma = 0.65
 L = 1
 args = [a, b, alpha, beta, gamma, L]
 ic = [0, 10e-10, 0, 0]
-t = np.linspace(1, 200, 100000)
+t = np.linspace(0, 200, 100000)
 
 x, y, z, w = solve_cco(t, ic, args)
 
@@ -174,5 +179,15 @@ ax.set_xlabel('v [V]')
 ax.set_ylabel('i [A]')
 plt.show()
 
-# Lyapunov exponents over time
-#tba
+# Lyapunov exponents
+dt = t[1] - t[0]
+u = np.eye(4)
+lyap = np.empty((t.size, 4))
+for i, k  in enumerate(t):
+    u_n = (np.eye(4) + cco_jacobian(k, x[i], y[i], z[i], w[i], *args)*dt) @ u
+    q, r = np.linalg.qr(u_n)
+    lyap[i, :] = np.log(np.abs(r.diagonal()))
+    u = q
+lyap_lambda = [sum([lyap[i, j] for i in range(t.size)]) / (dt*t.size)
+    for j in range(4)]
+print(f'Lyapunov exponents: {lyap_lambda}')
