@@ -6,6 +6,8 @@ Figure 1 of the outlined paper "summarizes neuro-computational features
 of biological neurons" and the original code is available on author's
 personal webpage:
 https://www.izhikevich.org/publications/figure1.m
+and the figure itself is available here:
+https://www.izhikevich.org/publications/figure1.pdf
 
 Author: Ante Lojic Kapetanovic
 """
