@@ -13,6 +13,47 @@ import numpy as np
 from scipy.integrate import cumtrapz
 
 
+def generate_voltage(t, omega, V_0):
+    """Return sinusoidal voltage characteristic.
+
+    Args
+    ----
+    t : numpy.ndarray
+        equally sequenced time points, unit=[s]
+    omega : float
+        angular frequency, unit=[1/s]
+    V_0 : float
+        source amplitude, unit=[V]
+
+    Returns
+    -------
+    numpy.ndarray
+        voltage time series, unit=[V]
+    """
+    return V_0*np.sin(omega*t)
+
+
+def generate_flux(t, omega, V_0):
+    """Return flux as the cumulative time integral of the sinusoidal
+    voltage source, $\phi(t)=\int_{t} v(t) dt$.
+
+    Args
+    ----
+    t : numpy.ndarray
+        equally sequenced time points, unit=[s]
+    omega : float
+        angular frequency, unit=[1/s]
+    V_0 : float
+        source amplitude, unit=[V]
+
+    Returns
+    -------
+    numpy.ndarray
+        flux time series, unit=[Wb]
+    """
+    return V_0/omega*(1 - np.cos(omega*t))
+
+
 def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
     """Return values of memristor's resistance over time.
 
@@ -56,9 +97,9 @@ def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
 t = np.linspace(0, 100, 1001)
 V_0 = 1
 omega = 0.1/1.5
-v = V_0*np.sin(omega*t)
+v = generate_voltage(t, omega, V_0)
 # phi_approx = cumtrapz(v, t, initial=0)
-phi = V_0/omega*(1 - np.cos(omega*t))
+phi = generate_flux(t, omega, V_0)
 
 # calculate memristance
 R_on = 1
