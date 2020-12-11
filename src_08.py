@@ -194,43 +194,48 @@ def lyap(t, x, y, z, w, *args):
     return l
 
 
-# configure parameters as in the paper
-a = 0.2
-b = 1
-alpha = 1
-beta = 0.65
-gamma = 0.65
-L = 1
-args = [a, b, alpha, beta, gamma, L]
-ic = [0, 10e-10, 0, 0]
-t = np.linspace(0, 200, 100000)
+def main():
+    # configure parameters as in the paper
+    a = 0.2
+    b = 1
+    alpha = 1
+    beta = 0.65
+    gamma = 0.65
+    L = 1
+    args = [a, b, alpha, beta, gamma, L]
+    ic = [0, 10e-10, 0, 0]
+    t = np.linspace(0, 200, 100000)
 
-start = time.time()
-x, y, z, w = solve_cco(t, ic, args)
-end = time.time()
-print(f'[solve_cco] Elapsed time: {end - start}s')
+    start = time.time()
+    x, y, z, w = solve_cco(t, ic, args)
+    end = time.time()
+    print(f'[solve_cco] Elapsed time: {end - start}s')
 
-# time series, v(t)
-fig, ax = plt.subplots()
-ax.plot(t, x)
-ax.set_xlabel('t [s]')
-ax.set_ylabel('v [V]')
-plt.show()
+    # time series, v(t)
+    fig, ax = plt.subplots()
+    ax.plot(t, x)
+    ax.set_xlabel('t [s]')
+    ax.set_ylabel('v [V]')
+    plt.show()
 
-# transient chaotic attractor
-i = W(w, a, b)*x
-fig, ax = plt.subplots()
-ax.plot(x, i)
-ax.set_xlabel('v [V]')
-ax.set_ylabel('i [A]')
-plt.show()
+    # transient chaotic attractor
+    i = W(w, a, b)*x
+    fig, ax = plt.subplots()
+    ax.plot(x, i)
+    ax.set_xlabel('v [V]')
+    ax.set_ylabel('i [A]')
+    plt.show()
 
-# Lyapunov exponents
-start = time.time()
-l = lyap(t, x, y, z, w, *args)
-end = time.time()
-print(f'[lyap] Elapsed time: {end - start}s')
-dt = t[1] - t[0]
-lyap_lambda = [sum([l[i, j] for i in range(t.size)]) / (dt*t.size)
-    for j in range(4)]
-print(f'Lyapunov exponents: {lyap_lambda}')
+    # Lyapunov exponents
+    start = time.time()
+    l = lyap(t, x, y, z, w, *args)
+    end = time.time()
+    print(f'[lyap] Elapsed time: {end - start}s')
+    dt = t[1] - t[0]
+    lyap_lambda = [sum([l[i, j] for i in range(t.size)]) / (dt*t.size)
+        for j in range(4)]
+    print(f'Lyapunov exponents: {lyap_lambda}')
+
+
+if __name__ == "__main__":
+    main()

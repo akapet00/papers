@@ -35,7 +35,7 @@ def generate_voltage(t, omega, V_0):
 
 def generate_flux(t, omega, V_0):
     """Return flux as the cumulative time integral of the sinusoidal
-    voltage source, $\phi(t)=\int_{t} v(t) dt$.
+    voltage source.
 
     Args
     ----
@@ -92,33 +92,39 @@ def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
     return R_0 * np.sqrt(1 - 2*nu*R_d*phi/(Q_0*R_0**2))
     
 
-## a single ideal memristor electrical circuit
-# generate voltage and calculate flux
-t = np.linspace(0, 100, 1001)
-V_0 = 1
-omega = 0.1/1.5
-v = generate_voltage(t, omega, V_0)
-# phi_approx = cumtrapz(v, t, initial=0)
-phi = generate_flux(t, omega, V_0)
+def main():
+    """Single ideal memristor electrical circuit simulation.
+    """
+    # generate voltage and calculate flux
+    t = np.linspace(0, 100, 1001)
+    V_0 = 1
+    omega = 0.1/1.5
+    v = generate_voltage(t, omega, V_0)
+    # phi_approx = cumtrapz(v, t, initial=0)
+    phi = generate_flux(t, omega, V_0)
 
-# calculate memristance
-R_on = 1
-R_off = R_on * 20
-D = 1e-8
-w_0 = D/10
-u_d = 1e-14
-nu = -1
-m = generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi)
+    # calculate memristance
+    R_on = 1
+    R_off = R_on * 20
+    D = 1e-8
+    w_0 = D/10
+    u_d = 1e-14
+    nu = -1
+    m = generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi)
 
-# q-phi and i-v characteristics
-i = v/m
-q = phi/m
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
-axs[0].plot(phi, q)
-axs[0].set_xlabel('$\\phi$')
-axs[0].set_ylabel('$q$')
-axs[1].plot(v, i)
-axs[1].set_xlabel('$v$')
-axs[1].set_ylabel('$i$')
-plt.tight_layout()
-plt.show()
+    # q-phi and i-v characteristics
+    i = v/m
+    q = phi/m
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
+    axs[0].plot(phi, q)
+    axs[0].set_xlabel('$\\phi$')
+    axs[0].set_ylabel('$q$')
+    axs[1].plot(v, i)
+    axs[1].set_xlabel('$v$')
+    axs[1].set_ylabel('$i$')
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

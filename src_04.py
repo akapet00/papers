@@ -103,33 +103,41 @@ def visualize(t, v, i):
     return ax
 
 
-## example of inhibition-induced spiking
-# Izhikevich model parameters
-a = -0.02
-b = -1
-c = -60
-d = 8
-# initial conditions for ODE system solver
-v0 = -63.8
-u0 = b*v0
-# resolution and simulation time
-tau = 0.5
-end = 350
-t = np.arange(0, end+tau, step=tau)
-# injected current
-i_fun = np.vectorize(lambda t: 80 if (t<50) | (t>250) else 75)
-# simulate and visualize
-sol = solve_ivp(
-    fun=izhikevich,
-    t_span=(t.min(), t.max()),
-    y0=(v0, u0),
-    args=(a, b, c, d, i_fun),
-    t_eval=t,
-    vectorized=True,
+def main():
+    """Example of inhibition-induced spiking using a simple Izhikevich
+    neuron model.
+    """
+    # Izhikevich model parameters
+    a = -0.02
+    b = -1
+    c = -60
+    d = 8
+    # initial conditions for ODE system solver
+    v0 = -63.8
+    u0 = b*v0
+    # resolution and simulation time
+    tau = 0.5
+    end = 350
+    t = np.arange(0, end+tau, step=tau)
+    # injected current
+    i_fun = np.vectorize(lambda t: 80 if (t<50) | (t>250) else 75)
+    # simulate and visualize
+    sol = solve_ivp(
+        fun=izhikevich,
+        t_span=(t.min(), t.max()),
+        y0=(v0, u0),
+        args=(a, b, c, d, i_fun),
+        t_eval=t,
+        vectorized=True,
+        method='RK45'
+        )
+    ax = visualize(
+        t=sol.t,
+        v=sol.y[0, :],
+        i=i_fun(sol.t)
     )
-ax = visualize(
-    t=sol.t,
-    v=sol.y[0, :],
-    i=i_fun(sol.t)
-)
-plt.show()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
