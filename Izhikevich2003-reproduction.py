@@ -11,69 +11,145 @@ https://www.izhikevich.org/publications/net.m
 Author: Ante Lojic Kapetanovic
 """
 
+import logging
+import sys
+from time import time
+
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.random import random_sample as rand
+from numpy.random import standard_normal as randn
+import tqdm
 
-def model(n_neur, exc_to_inh_ratio):
-    n_inh = int(n_neur/np.sum(exc_to_inh_ratio))
-    n_exc = int(n_neur - n_inh)
-    r_exc = np.random.random_sample(n_exc)
-    r_inh = np.random.random_sample(n_inh)
-    a = np.hstack((0.02*np.ones((n_exc, )), 0.02 + 0.08*r_inh))
-    b = np.hstack((0.2*np.ones((n_exc,)), 0.25 - 0.05*r_inh))
-    c = np.hstack((-65 + 15*r_exc**2, -65*np.ones((n_inh, ))))
-    d = np.hstack((8 - 6*r_exc**2, 2*np.ones((n_inh, ))))
-    S = np.hstack(
-        (0.5*np.random.random_sample((n_exc + n_inh, n_exc)),
-        -np.random.random_sample((n_exc + n_inh, n_inh))))
-    return (a, b, c, d, S)
 
-def simulation(tau, sim_dur, model):
-    a, b, c, d, S = model
-    # initial values
-    v = -65*np.ones((n_exc + n_inh, ))
-    u = b*v
-    # simulation
-    firing_time = []
-    firing_neur = []
-    for t in range(sim_dur):
-        I = np.hstack(
-            (5*np.random.standard_normal(n_exc, ),
-            2*np.random.standard_normal(n_inh, )))
-        fired = np.where(v>=30)[0]
-        firing_time.extend(t*np.ones_like(fired))
-        firing_neur.extend(fired)
-        v[fired] = c[fired]
-        u[fired] = u[fired] + d[fired]
-        I = I + np.sum(S[:, fired], 1)
-        v = v + tau*(0.04*v**2 + 5*v + 140 - u + I)
-        v = v + tau*(0.04*v**2 + 5*v + 140 - u + I)
-        u = u + a*(b*v - u)
-    return (firing_time, firing_neur, v)
+class NeuralNet():
+    def __init__(self):
+        """Constructor."""
+        pass
+
+    def __str__(self):
+        """String representation of the object."""
+        short_desc = 'Spiking neural network based on Izhikevich neuron model'
+        div = '-'*len(short_desc)
+        if self.n_inh is None:
+            return short_desc
+        return (
+            short_desc\
+            + f'\n{div}\n'
+            + f' Size of the network: {self.n_neur}\n'\
+            + f' Excitatory neurons:  {self.n_exc}\n'\
+            + f' Inhibitory neurons:  {self.n_inh}\n'\
+            + f'{div}\n')
+    
+    def __repr__(self):
+        """Object representation."""
+        return self.__str__()
+
+    def build(self, n_neur, exc_to_inh_ratio):
+        """Build neural network.
+
+        Args
+        ----
+        n_neur : int
+            number of neurons in neural network
+        exc_to_inh_ratio : tuple
+            two element tuple representing the ratio between the number
+            of excitatory neurons vs inhibitory neurons
+        
+        Returns
+        -------
+        None
+        """
+        self.n_neur = n_neur
+        self.n_inh = int(self.n_neur/np.sum(exc_to_inh_ratio))
+        self.n_exc = int(self.n_neur - self.n_inh)
+        self.r_exc = rand(self.n_exc)
+        self.r_inh = rand(self.n_inh)
+        self.a = np.hstack(
+            (0.02*np.ones((self.n_exc, )), 0.02 + 0.08*self.r_inh))
+        self.b = np.hstack(
+            (0.2*np.ones((self.n_exc,)), 0.25 - 0.05*self.r_inh))
+        self.c = np.hstack(
+            (-65 + 15*self.r_exc**2, -65*np.ones((self.n_inh, ))))
+        self.d = np.hstack(
+            (8 - 6*self.r_exc**2, 2*np.ones((self.n_inh, ))))
+        self.S = np.hstack(
+            (0.5*rand((self.n_exc + self.n_inh, self.n_exc)),
+            -rand((self.n_exc + self.n_inh, self.n_inh))))
+
+    def simulate(self, v_0, sim_dur, tau, visualize=False):
+        """Run simulation.
+
+        Args
+        ----
+        v_0 : float
+            initial value of membrane potential
+        sim_dur : int
+            simulation duration, unit=[ms]
+        tau : float
+            simulation resolution, unit=[ms]
+        visualize : bool, optional
+            if True, return visualization of activated neurons over
+            time and the final membrane potential dynamics
+        
+        Returns
+        -------
+        None
+        """
+        v = v_0*np.ones((self.n_exc + self.n_inh, ))
+        u = self.b*v
+
+        firing_time = []
+        firing_neur = []
+        start_time = time()
+        for t in tqdm.trange(sim_dur):
+            I = np.hstack(
+                (5*randn(self.n_exc, ),
+                2*randn(self.n_inh, )))
+            fired = np.where(v>=30)[0]
+            firing_time.extend(t*np.ones_like(fired))
+            firing_neur.extend(fired)
+            v[fired] = self.c[fired]
+            u[fired] = u[fired] + self.d[fired]
+            I = I + np.sum(self.S[:, fired], 1)
+            for _ in range(int(1/tau)):
+                v = v + tau*(0.04*v**2 + 5*v + 140 - u + I)
+            u = u + self.a*(self.b*v - u)
+        end_time = time() - start_time
+        logging.info('\n')
+        logging.info(f'Simulation finished. Elapsed: {round(end_time, 5)}s')
+        if visualize:
+            fig, ax = plt.subplots()
+            ax.plot(firing_time, firing_neur, 'o', markersize=1, alpha=.7)
+            ax.axhline(self.n_exc - 1, xmin=0, xmax=sim_dur-1, color='k',
+                linewidth=0.7)
+            ax.text(0.5, 0.5*self.n_exc/self.n_neur, 'excitatory',
+                horizontalalignment='center', verticalalignment='center',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='wheat', alpha=0.9))
+            ax.text(0.5, self.n_exc/self.n_neur + 0.5*self.n_inh/self.n_neur,
+                'inhibitory', horizontalalignment='center',
+                verticalalignment='center', transform=ax.transAxes,
+                bbox=dict(facecolor='wheat', alpha=0.9))
+            ax.set_xlabel('t [ms]')
+            ax.set_ylabel('neuron ID')
+            return (fig, ax)
+
 
 def main():
-    # network architecture
-    n_neur = 1000
-    exc_to_inh_ratio = (4, 1)
-    neur_net = model(n_neur, exc_to_inh_ratio)
-
-    # simulation time
-    tau = 0.5  # for numerical stability
-    sim_dur = 1000  # simulation time
-    firing_time, firing_neur, v = simulation(tau, sim_dur, model)
-
-    # visualization
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True,
-        gridspec_kw={'height_ratios': [4, 1]})
-    ax[0].plot(firing_time, firing_neur, 'o', markersize=1, alpha=.7)
-    ax[0].set_ylabel('neuron #')
-    ax[1].plot(v, linewidth=.5)
-    ax[1].set_xlabel('time [ms]')
-    ax[1].set_ylabel('v [mV]')
-    ax[1].set_ylim(np.min(v), 30)
-    plt.tight_layout()
+    n_neur = 1000              # total number of neurons in network
+    exc_to_inh_ratio = (4, 1)  # excitatory vs inhibitory neurons ratio
+    tau = 0.5                  # ms, for numerical stability
+    sim_dur = 1000             # ms, simulation time
+    v_0 = -65                  # mV, initial membrane potential value
+    
+    snn = NeuralNet()
+    snn.build(n_neur, exc_to_inh_ratio)
+    logging.info(snn)
+    _ = snn.simulate(v_0, sim_dur, tau, visualize=True)
     plt.show()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     main()
