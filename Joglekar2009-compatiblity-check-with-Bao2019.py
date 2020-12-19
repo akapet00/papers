@@ -19,6 +19,36 @@ from scipy.optimize import minimize
 
 
 #######################################################################
+## plotting configuration
+#######################################################################
+def plotting_config(nrows=1, ncols=1):
+    """Setup configuration for paper quality figures.
+
+    Params
+    ------
+    nrows : int
+        Number of subplots row-wise.
+    ncols : int
+        Number of subplots column-wise.
+
+    Returns
+    -------
+    None
+    """
+    plt.style.use('seaborn-paper')
+    plt.rcParams.update({
+        'text.usetex': False,
+        'font.family': 'serif',
+        'font.size': 10,
+        'axes.labelsize': 10,
+        'grid.linewidth': 0.7,
+        'legend.fontsize': 8,
+        'xtick.labelsize': 8,
+        'ytick.labelsize': 8,
+        'figure.figsize': [4.774*nrows, 2.950*ncols],
+    })
+
+#######################################################################
 ## util functions
 #######################################################################
 def mse(true, fit):
@@ -172,15 +202,16 @@ def main():
     # visualization of I-V curves
     i = v/memristance
     i_fit = v/memristance_fit
-    plt.plot(v, i, marker='o', markersize=5, markevery=5, linestyle='none',
-        label='[data] Bao et al. (2010)')
-    plt.plot(v, i_fit, '--',
-        label='[fit] Joglekar et al. (2009)')
-    plt.xlabel('v [V]')
-    plt.ylabel('i [A]')
-    plt.legend(loc='best')
-    plt.grid()
-    plt.show()
+    plotting_config(nrows=1, ncols=1)
+    fig, ax = plt.subplots()
+    ax.plot(v, i, 'ko', markersize=4, markevery=5, label='Bao et al.')
+    ax.plot(v, i_fit, 'k-', label='Joglekar et al.')
+    ax.set_xlabel('$v$ [V]')
+    ax.set_ylabel('$i$ [A]')
+    ax.legend(loc='best')
+    ax.grid()
+    # plt.show()
+    fig.savefig(fname='compatibility.eps', format='eps', bbox_inches='tight')
 
 
 if __name__ == "__main__":
