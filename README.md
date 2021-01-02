@@ -1,2 +1,3 @@
-# memristor-papers
-Implementation of numerics for various papers regarding memristor and chaos theory.
+# papers
+
+Implementation of various papers regarding electromagnetic theory, bioelectromagnetics, nonlinear dynamics, computational neuroscience, machine learning, etc. 
