@@ -5,7 +5,6 @@ from matplotlib.transforms import Transform
 import numpy as np 
 
 
-DATA_PATH = 'data'
 SUPPORTED_TISSUES = [
     'air', 'blood', 'blood_vessel', 'body_fluid', 'bone_cancellous',
     'bone_cortical', 'bone_marrow', 'brain_grey_matter', 'brain_white_matter',
@@ -36,7 +35,7 @@ def load_tissue_diel_properties(tissue, frequency):
     if 1e9 > frequency > 100e9:
         raise ValueError('Invalid frequency. Choose in range [1, 100] GHz')
     tissue_diel_properties_path = os.path.join(
-        DATA_PATH, 'tissue_diel_properties', 'tissue_diel_properties.csv')
+        'tissue_diel_properties', 'tissue_diel_properties.csv')
     with open(tissue_diel_properties_path) as f: 
         reader = csv.reader(f) 
         for row in reader:
