@@ -1,8 +1,10 @@
 import csv
 import os
+
 import matplotlib
 from matplotlib.transforms import Transform
 import numpy as np 
+from scipy.integrate import odeint
 
 
 SUPPORTED_TISSUES = [
@@ -45,6 +47,66 @@ def load_tissue_diel_properties(tissue, frequency):
                 loss_tangent = float(row[4]) 
                 penetration_depth = float(row[5])
         return (conductivity, relative_permitivity, loss_tangent, penetration_depth)
+
+    
+def solve_bhte1d(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
+    """Numerical solution to 1-D Pennes' bioheat transfer equation by
+    using Fast Fourier Transform on spatial coordinate.
+    
+    Parameters
+    ----------
+    t : numpy.ndarray
+        simulation time; exposure time in seconds
+    N : int
+        number of collocation points
+    pen_depth : float
+        energy penetration depth
+    k : float
+        thermal conductivity of the tissue
+    rho : float
+        tissue density
+    C : float
+        heat capacity of the tissue
+    m_b : float
+        blood perfusion
+    I_0 : float
+        incident power density of the tissue surface
+    T_tr : float
+        transmission coefficient into the tisse
+        
+    Returns
+    -------
+    numpy.ndarray
+        temperature distribution in time for each collocation point
+    """
+    dx = pen_depth / N
+    x = np.arange(0, pen_depth, dx)
+    kappa = 2 * np.pi * np.fft.fftfreq(N, d=dx)
+    SAR = I_0 * T_tr / (rho * pen_depth) * np.exp(-x / pen_depth)
+    SAR_fft = np.fft.fft(SAR)
+
+    # initial conditions -- prior to radiofrequency exposure
+    T0 = np.zeros_like(x)
+    T0_fft = np.fft.fft(T0)
+
+    # recasting complex numbers to an array for easier handling in SciPy
+    T0_fft_ri = np.concatenate((T0_fft.real, T0_fft.imag))
+
+    def rhs(T_fft_ri, t, kappa, k, rho, C, m_b, SAR_fft):
+        T_fft = T_fft_ri[:N] + (1j) * T_fft_ri[N:]
+        d_T_fft = (-k / (rho * C) * np.power(kappa, 2) * T_fft
+                   - rho * m_b * T_fft
+                   + SAR_fft / C
+                  )
+        return np.concatenate((d_T_fft.real, d_T_fft.imag))
+
+    T_fft_ri = odeint(rhs, T0_fft_ri, t, args=(kappa, k, rho, C, m_b, SAR_fft))
+    T_fft = T_fft_ri[:, :N] + (1j) * T_fft_ri[:, N:]
+
+    T = np.empty_like(T_fft)
+    for i in range(t.size):
+        T[i, :] = np.fft.ifft(T_fft[i, :])
+    return T.real
 
     
 class SqrtTransform(Transform):
