@@ -91,13 +91,13 @@ def solve_bhte1d(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
 
     # recasting complex numbers to an array for easier handling in SciPy
     T0_fft_ri = np.concatenate((T0_fft.real, T0_fft.imag))
-
+    
     def rhs(T_fft_ri, t, kappa, k, rho, C, m_b, SAR_fft):
         T_fft = T_fft_ri[:N] + (1j) * T_fft_ri[N:]
-        d_T_fft = (-k / (rho * C) * np.power(kappa, 2) * T_fft
-                   - rho * m_b * T_fft
-                   + SAR_fft / C
-                  )
+        d_T_fft = (
+            - np.power(kappa, 2) * k * T_fft / (rho * C)
+            - rho * m_b * T_fft
+            + SAR_fft / C)
         return np.concatenate((d_T_fft.real, d_T_fft.imag))
 
     T_fft_ri = odeint(rhs, T0_fft_ri, t, args=(kappa, k, rho, C, m_b, SAR_fft))
