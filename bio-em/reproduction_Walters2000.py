@@ -27,7 +27,7 @@ from utils import solve_bhte1d as solve_num
 k = 0.37
 rho = 1109.
 C = 3391.
-m_b = 1.8e-6
+m_b = 2.32e-4
 
 
 def solve_anal(t, pen_depth, I_0, T_tr):
@@ -70,36 +70,35 @@ sigma, eps_r, _, pen_depth = load_tissue_diel_properties('skin_dry', f)
 # the distance beneath the surface at which the SAR has fallen to a factor of
 # 1/e below that at the surface; one-half of the more commonly reported wave
 # penetration depth
-pen_depth = pen_depth / 2
-
-# air (vacuum) resistance 
-Z_air = np.sqrt(mu_0 / eps_0)
-
-# dry skin resistance
-Z_skin_dry = np.sqrt(mu_0 / (eps_r * eps_0))
-
-# energy (Fresnel) transmission coefficient into the tissue
-T_tr = 2 * Z_skin_dry / (Z_air + Z_skin_dry)
+pen_depth = pen_depth
 
 # incident power densities
-I_0 = np.linspace(0.95, 1.75, 9)  # in W/cm^2
+I_0 = np.linspace(0.95, 1.75, 9) * 1e4
 
-# analytical simulation
-t = np.linspace(0, 4, 21)
-delta_T_sur = np.empty((t.size, I_0.size))
-for col_idx, i_0 in enumerate(I_0):
-    delta_T_sur[:, col_idx] = solve_anal(t, pen_depth, i_0 * 1e4, T_tr)
-plt.plot(t, delta_T_sur, 'x')
+# energy (Fresnel) transmission coefficient into the tissue 
+Z_air = np.sqrt(mu_0 / eps_0)  # air (vacuum) resistance
+Z_skin_dry = np.sqrt(mu_0 / (eps_r * eps_0))  # dry skin resistance
+T_tr = 2 * Z_skin_dry / (Z_air + Z_skin_dry)
 
-# numerical solution accounting for blood perfusion
-t = np.linspace(0, 4, 101)
+# simulation
+sim_time = 3
 N = 11
+t = np.linspace(0, sim_time, 21)
+delta_T_sur = np.empty((t.size, I_0.size))
 delta_T_sur_mb = np.empty((t.size, I_0.size))
 for col_idx, i_0 in enumerate(I_0):
-    delta_T_sur_mb[:, col_idx] = solve_num(t, N, pen_depth, k, rho, C, m_b, i_0 * 1e4, T_tr)[:, 0]
-plt.plot(t, delta_T_sur_mb)
+    delta_T_sur[:, col_idx] = solve_anal(t, pen_depth, i_0, T_tr)
+    delta_T_sur_mb[:, col_idx] = solve_num(t, N, pen_depth, k, rho, C, m_b, i_0, T_tr)[:, 0]
 
 # viz
-plt.xlabel('t [s]')
-plt.ylabel('$\\Delta T_{sur}$ [°C]')
+fig = plt.figure()
+ax = fig.add_subplot()
+marker = ['ro', 'g^', 'bx', 'r^', 'gx', 'bo', 'rx', 'go', 'b^']
+line = ['r', 'g', 'b', 'r', 'g', 'b', 'r', 'g', 'b']
+for col_idx, i_0 in enumerate(I_0):
+    ax.plot(t, delta_T_sur[:, col_idx], marker[col_idx], markersize=4, label=f'$I_0 = {i_0 / 1e4}$')
+    ax.plot(t, delta_T_sur_mb[:, col_idx], line[col_idx])
+ax.set_xlabel('t [s]')
+ax.set_ylabel('$\\Delta T_{sur}$ [°C]')
+ax.legend(ncol=2)
 plt.show()
