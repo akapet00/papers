@@ -11,6 +11,9 @@ Author: Ante Lojic Kapetanovic
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import cumtrapz
+import seaborn
+
+seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
 
 
 def generate_voltage(t, omega, V_0):
@@ -30,7 +33,7 @@ def generate_voltage(t, omega, V_0):
     numpy.ndarray
         voltage time series, unit=[V]
     """
-    return V_0*np.sin(omega*t)
+    return V_0 * np.sin(omega * t)
 
 
 def generate_flux(t, omega, V_0):
@@ -51,7 +54,7 @@ def generate_flux(t, omega, V_0):
     numpy.ndarray
         flux time series, unit=[Wb]
     """
-    return V_0/omega*(1 - np.cos(omega*t))
+    return V_0 / omega * (1 - np.cos(omega * t))
 
 
 def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
@@ -84,21 +87,19 @@ def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
     # difference in resistance between doped and undoped region
     R_d = R_off - R_on
     # effective resistance of the memristor at t=0
-    R_0 = R_on*(w_0/D) + R_off*(1-w_0/D)
+    R_0 = R_on * (w_0 / D) + R_off * (1 - w_0 / D)
     # the ammount of charge that is required to pass through the
     # memristor for the dopant boundary to move through distance D
-    Q_0 = D**2 / (u_d*R_on)
+    Q_0 = D ** 2 / (u_d * R_on)
     # memristance as a function of flux-linkage
-    return R_0 * np.sqrt(1 - 2*nu*R_d*phi/(Q_0*R_0**2))
+    return R_0 * np.sqrt(1 - 2 * nu * R_d * phi / (Q_0 * R_0 ** 2))
     
 
 def main():
-    """Single ideal memristor electrical circuit simulation.
-    """
     # generate voltage and calculate flux
     t = np.linspace(0, 100, 1001)
     V_0 = 1
-    omega = 0.1/1.5
+    omega = 0.1 / 1.5
     v = generate_voltage(t, omega, V_0)
     # phi_approx = cumtrapz(v, t, initial=0)
     phi = generate_flux(t, omega, V_0)
@@ -107,21 +108,19 @@ def main():
     R_on = 1
     R_off = R_on * 20
     D = 1e-8
-    w_0 = D/10
+    w_0 = D / 10
     u_d = 1e-14
     nu = -1
     m = generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi)
 
     # q-phi and i-v characteristics
-    i = v/m
-    q = phi/m
+    i = v / m
+    q = phi / m
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
-    axs[0].plot(phi, q)
-    axs[0].set_xlabel('$\\phi$')
-    axs[0].set_ylabel('$q$')
-    axs[1].plot(v, i)
-    axs[1].set_xlabel('$v$')
-    axs[1].set_ylabel('$i$')
+    axs[0].plot(phi, q, lw=4)
+    axs[0].set(xlabel='$\\phi$', ylabel='$q$')
+    axs[1].plot(v, i, lw=4)
+    axs[1].set(xlabel='$v$', ylabel='$i$')
     plt.tight_layout()
     plt.show()
 

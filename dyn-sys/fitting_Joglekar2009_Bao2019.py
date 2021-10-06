@@ -1,14 +1,14 @@
 """Comparison between I-V curves obtained by using the smooth nonlinear
 memristance approximation function introduced in the study by Bao, B.
 C.; Liu, Z. and Xu, J. P.: Steady periodic memristor oscillator with
-transient chaotic behaviours, Electronic Letters, doi:
-10.1049/el.2010.3114, and by using the formulation that outlines the
-actual physical memristive device, introduced in the study by Joglekar,
-Y. N. and Wolf S.: The elusive memristor: properties of basic
-electrical circuits, European Journal of Physics 30, doi:
-10.1088/0143-0807/30/4/001. Parameters in the memristance formulation
-by Joglekar et al. are fitted using the ideal memristance defined in
-the formulation by Bao et al. 
+transient chaotic behaviours, Electronic Letters,
+doi: 10.1049/el.2010.3114, and by using the formulation that outlines
+the actual physical memristive device, the study by Joglekar, Y. N. and
+Wolf S.: The elusive memristor: properties of basic electrical circuits,
+European Journal of Physics 30, doi: 10.1088/0143-0807/30/4/001.
+
+Parameters in the memristance formulation by Joglekar et al. are fitted
+using the ideal memristance defined in the formulation by Bao et al.
 
 Author: Ante Lojic Kapetanovic
 """
@@ -16,43 +16,15 @@ Author: Ante Lojic Kapetanovic
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
+import seaborn
 
 
-#######################################################################
-## plotting configuration
-#######################################################################
-def plotting_config(nrows=1, ncols=1):
-    """Setup configuration for paper quality figures.
+seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
 
-    Params
-    ------
-    nrows : int
-        Number of subplots row-wise.
-    ncols : int
-        Number of subplots column-wise.
 
-    Returns
-    -------
-    None
-    """
-    plt.style.use('seaborn-paper')
-    plt.rcParams.update({
-        'text.usetex': False,
-        'font.family': 'serif',
-        'font.size': 10,
-        'axes.labelsize': 10,
-        'grid.linewidth': 0.7,
-        'legend.fontsize': 8,
-        'xtick.labelsize': 8,
-        'ytick.labelsize': 8,
-        'figure.figsize': [4.774*nrows, 2.950*ncols],
-    })
 
-#######################################################################
-## util functions
-#######################################################################
-def mse(true, fit):
-    """Return mean square error between true and fit data.
+def sse(true, fit):
+    """Return sum square error between true and fit data.
 
     Params
     ------
@@ -64,28 +36,9 @@ def mse(true, fit):
     Returns
     -------
     float
-        mean square error between true and fit data
+        sum square error between true and fit data
     """
-    return np.mean((true - fit)**2)
-
-
-def mae(true, fit):
-    """Return mean absolute error between true and fit data.
-
-    Params
-    ------
-    true : float or numpy.ndarray
-        measured data
-    fit : float or numpy.ndarray
-        fitted data
-    
-    Returns
-    -------
-    float
-        mean absolute error between true and fit data
-    """
-    return np.mean(np.abs(true - fit))
-#######################################################################
+    return np.sum((true - fit) ** 2)
 
 
 def W(phi, a, b):
@@ -109,7 +62,7 @@ def W(phi, a, b):
     float
         the slope of flux-linkage
     """
-    return a + 3*b*phi**2
+    return a + 3 * b * phi ** 2
 
 
 def generate_memristance(phi, D, u_d, R_on):
@@ -135,15 +88,19 @@ def generate_memristance(phi, D, u_d, R_on):
     numpy.ndarray
         effective resistance of the memristor over time, unit=[Ohm]
     """
-    w_0 = D/5  # length of the doped region at t=0, unit=[m]
-    R_off = 20*R_on  # resistance of the fully undoped memristor, unit=[Ohm]
-    R_d = R_off - R_on  # resistance difference between regions, unit=[Ohm]
-    R_0 = R_on*(w_0/D) + R_off*(1-w_0/D)  # effective resistance at t=0
-    Q_0 = D**2 / (u_d*R_on)  # initial charge of dopant
-    return R_0 * np.sqrt(1 + 2*R_d*phi/(Q_0*R_0**2))  # effective resistance
+    # length of the doped region at t=0, unit=[m]
+    w_0 = D / 5
+    # resistance of the fully undoped memristor, unit=[Ohm]
+    R_off = 20 * R_on
+    # resistance difference between regions, unit=[Ohm]
+    R_d = R_off - R_on
+    # effective resistance at t=0
+    R_0 = R_on * (w_0 / D) + R_off * (1 - w_0 / D)
+    # initial charge of dopant
+    Q_0 = D ** 2 / (u_d * R_on)
+    return R_0 * np.sqrt(1 + 2 * R_d * phi / (Q_0 * R_0 ** 2))
 
 
-## loss function
 def loss(params, memristance, phi):
     """Return loss as l-2 norm between the theoretical memristance
     obtained via nonlinear approximation function and the memristance
@@ -164,7 +121,7 @@ def loss(params, memristance, phi):
     float
         loss function value for a given iteration
     """
-    return mse(memristance, generate_memristance(phi, *params))
+    return sse(memristance, generate_memristance(phi, *params))
 
 
 def main():
@@ -175,44 +132,37 @@ def main():
     # generate sinusodial voltage and flux linkage
     omega = 1
     V_0 = 1
-    v = V_0*np.sin(omega*t)
-    phi = V_0/omega*(1 - np.cos(omega*t))
+    v = V_0 * np.sin(omega*t)
+    phi = V_0 / omega * (1 - np.cos(omega * t))
 
     # theoretical memristance approximation
     a = 0.4
     b = 0.02
-    memristance = 1/W(phi, a, b) 
+    memristance = 1 / W(phi, a, b)
 
     # unbounded minimization procedure
-    res = minimize(
-        fun=loss,
-        x0=(10e-8, 1e-14, 10),
-        args=(memristance, phi),
-        method='Nelder-Mead',
-        options={'xtol':1e-8},
-    )
+    res = minimize(fun=loss,
+                   x0=(10e-8, 1e-14, 10),
+                   args=(memristance, phi),
+                   method='Nelder-Mead',
+                   options={'xtol': 1e-8})
     opt_params = res.x
-    print(
-        f'\nFlux controled memristive device configuration:',
-        f'\n D    = {opt_params[0]:3e} Ohm',
-        f'\n u_d  = {opt_params[1]:3e} m^2/Vs',
-        f'\n R_on = {opt_params[2]:3e} Ohm')
+    print(f'\nFlux controled memristive device configuration:',
+          f'\n D    = {opt_params[0]:3e} Ohm',
+          f'\n u_d  = {opt_params[1]:3e} m^2/Vs',
+          f'\n R_on = {opt_params[2]:3e} Ohm')
     memristance_fit = generate_memristance(phi, *opt_params)
 
     # visualization of I-V curves
-    i = v/memristance
-    i_fit = v/memristance_fit
-    plotting_config(nrows=1, ncols=1)
+    i = v / memristance
+    i_fit = v / memristance_fit
     fig, ax = plt.subplots()
-    ax.plot(v, i, 'ko', markersize=4, markevery=5, label='Bao et al.')
-    ax.plot(v, i_fit, 'k-', label='Joglekar et al.')
-    ax.set_xlabel('$v$ [V]')
-    ax.set_ylabel('$i$ [A]')
-    ax.legend(loc='best')
-    ax.grid()
-    # plt.show()
-    fig.savefig(fname='compatibility.eps', format='eps', bbox_inches='tight')
-
+    ax.plot(v, i, 'bo', ms=8, markevery=10, label='Bao et al.', zorder=2)
+    ax.plot(v, i_fit, 'r-', lw=3, label='Joglekar et al.', zorder=1)
+    ax.set(xlabel='$v$ [V]', ylabel='$i$ [A]')
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     main()

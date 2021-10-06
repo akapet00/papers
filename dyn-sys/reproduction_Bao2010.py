@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 from numba import njit
 import numpy as np
 from scipy.integrate import solve_ivp
+import seaborn
+
+seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
 
 
 @njit
@@ -32,8 +35,8 @@ def q(phi, a, b):
     float
         flux-linkage value
     """
-    assert (a>=0 and b>=0), '`a` and `b` must be positive values'
-    return a*phi + b*phi**3
+    assert (a >= 0 and b >= 0), '`a` and `b` must be positive values'
+    return a * phi + b * phi ** 3
 
 
 @njit
@@ -55,8 +58,8 @@ def W(phi, a, b):
     float
         the slope of flux-linkage
     """
-    assert (a>=0 and b>=0), '`a` and `b` must be positive values'
-    return a + 3*b*phi**2
+    assert (a >= 0 and b >= 0), '`a` and `b` must be positive values'
+    return a + 3 * b * phi ** 2
 
 
 @njit
@@ -65,7 +68,7 @@ def cco(k, ic, *args):
     flux-controlled memristor;
     https://static-01.hindawi.com/articles/mpe/volume-2014/203123/figures/203123.fig.001.jpg
     where: x = v_1, y = i_3, z = v_2, w = phi, alpha = 1/C_1,
-    beta = 1/C_2, gamma = G/C_2, L = 1
+    beta = 1 / C_2, gamma = G / C_2, L = 1
 
     Params
     ------
@@ -83,10 +86,10 @@ def cco(k, ic, *args):
     """
     x, y, z, w = ic
     a, b, alpha, beta, gamma, L = args
-    x_prime = k*alpha*(y - W(w, a, b)*x)
-    y_prime = k*(z - x)
-    z_prime = k/L*(-beta*y + gamma*z)
-    w_prime = k*x 
+    x_prime = k * alpha * (y - W(w, a, b) * x)
+    y_prime = k * (z - x)
+    z_prime = k / L * (-beta * y + gamma * z)
+    w_prime = k * x 
     return (x_prime, y_prime, z_prime, w_prime)
 
 
@@ -146,14 +149,13 @@ def solve_cco(k, ic, args):
     tuple
         canonical Chua's oscillator ODE system solution
     """
-    sol = solve_ivp(
-        fun=cco,
-        t_span=(k.min(), k.max()),
-        y0=ic,
-        method='RK45',
-        t_eval=np.linspace(k.min(), k.max(), k.size),
-        vectorized=True,
-        args=args)
+    sol = solve_ivp(fun=cco,
+                    t_span=(k.min(), k.max()),
+                    y0=ic,
+                    method='RK45',
+                    t_eval=np.linspace(k.min(), k.max(), k.size),
+                    vectorized=True,
+                    args=args)
     x, y, z, w = sol.y
     return (x, y, z, w)
 
@@ -187,7 +189,7 @@ def lyap(t, x, y, z, w, *args):
     v = np.eye(4)
     l = np.zeros((t.size, 4), dtype=np.float64)
     for i, k in enumerate(t):
-        u_n = np.dot(v + cco_jacobian(k, x[i], y[i], z[i], w[i], *args)*dt, u)
+        u_n = np.dot(v + cco_jacobian(k, x[i], y[i], z[i], w[i], *args) * dt, u)
         q, r = np.linalg.qr(u_n)
         l[i, :] = np.log(np.abs(np.diag(r)))
         u = q
@@ -213,26 +215,24 @@ def main():
 
     # time series, v(t)
     fig, ax = plt.subplots()
-    ax.plot(t, x)
-    ax.set_xlabel('t [s]')
-    ax.set_ylabel('v [V]')
+    ax.plot(t, x, lw=4)
+    ax.set(xlabel='$t$ [s]', ylabel='$v$ [V]')
     plt.show()
 
     # transient chaotic attractor
     i = W(w, a, b)*x
     fig, ax = plt.subplots()
-    ax.plot(x, i)
-    ax.set_xlabel('v [V]')
-    ax.set_ylabel('i [A]')
+    ax.plot(x, i, lw=4)
+    ax.set(xlabel='$v$ [V]', ylabel='$i$ [A]')
     plt.show()
 
     # Lyapunov exponents
     start = time.time()
     l = lyap(t, x, y, z, w, *args)
     end = time.time()
-    print(f'[lyap] Elapsed time: {end - start}s')
+    print(f'[lyap] Elapsed time: {end - start} s')
     dt = t[1] - t[0]
-    lyap_lambda = [sum([l[i, j] for i in range(t.size)]) / (dt*t.size)
+    lyap_lambda = [sum([l[i, j] for i in range(t.size)]) / (dt * t.size)
         for j in range(4)]
     print(f'Lyapunov exponents: {lyap_lambda}')
 
