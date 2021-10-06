@@ -14,6 +14,10 @@ Author: Ante Lojic Kapetanovic
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
+import seaborn
+
+
+seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
 
 
 def I(t, i_fun):
@@ -85,7 +89,7 @@ def visualize(t, v, i):
     v : numpy.ndarray
         time series for membrane potential
     i : numpy.ndarray
-        time series for synaptic or injected dc-current
+        time series for synaptic current
 
     Returns
     -------
@@ -93,14 +97,14 @@ def visualize(t, v, i):
         two column axes of membrane potential in time and stimulating
         current in time, respectively
     """
-    _, ax = plt.subplots(nrows=2, ncols=1, sharex=True, squeeze=True,
-        gridspec_kw={'height_ratios': [4, 1]})
-    ax[0].plot(t, v)
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, squeeze=True,
+                           gridspec_kw={'height_ratios': [4, 1]})
+    ax[0].plot(t, v, lw=4)
     ax[0].set_ylabel('$V(t)$ [mV]')
-    ax[1].plot(t, i)
-    ax[1].set_ylabel('$I_{exc}(t)$ [$\\mu$A]')
-    plt.xlabel('$t$ [ms]')
-    return ax
+    ax[1].plot(t, i, lw=4)
+    ax[1].set(xlabel='$t$ [ms]', ylabel='$I_{syn}(t)$ [nA]')
+    plt.tight_layout()
+    return fig, ax
 
 
 def main():
@@ -122,20 +126,14 @@ def main():
     # injected current
     i_fun = np.vectorize(lambda t: 80 if (t<50) | (t>250) else 75)
     # simulate and visualize
-    sol = solve_ivp(
-        fun=izhikevich,
-        t_span=(t.min(), t.max()),
-        y0=(v0, u0),
-        args=(a, b, c, d, i_fun),
-        t_eval=t,
-        vectorized=True,
-        method='RK45'
-        )
-    ax = visualize(
-        t=sol.t,
-        v=sol.y[0, :],
-        i=i_fun(sol.t)
-    )
+    sol = solve_ivp(fun=izhikevich,
+                    t_span=(t.min(), t.max()),
+                    y0=(v0, u0),
+                    args=(a, b, c, d, i_fun),
+                    t_eval=t,
+                    vectorized=True,
+                    method='RK45')
+    fig, ax = visualize(t=sol.t, v=sol.y[0, :], i=i_fun(sol.t))
     plt.show()
 
 

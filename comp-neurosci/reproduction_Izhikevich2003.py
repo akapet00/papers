@@ -19,7 +19,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import random_sample as rand
 from numpy.random import standard_normal as randn
+import seaborn
 import tqdm
+
+
+seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
 
 
 class NeuralNet():
@@ -121,17 +125,16 @@ class NeuralNet():
         if visualize:
             fig, ax = plt.subplots()
             ax.plot(firing_time, firing_neur, 'o', markersize=1, alpha=.7)
-            ax.axhline(self.n_exc - 1, xmin=0, xmax=sim_dur-1, color='k',
-                linewidth=0.7)
+            ax.axhline(self.n_exc - 1, xmin=0, xmax=sim_dur-1, color='k', lw=2)
             ax.text(0.5, 0.5*self.n_exc/self.n_neur, 'excitatory',
                 horizontalalignment='center', verticalalignment='center',
                 transform=ax.transAxes,
                 bbox=dict(facecolor='wheat', alpha=0.9))
-            ax.text(0.5, self.n_exc/self.n_neur + 0.5*self.n_inh/self.n_neur,
+            ax.text(0.5, self.n_exc/self.n_neur + 0.4*self.n_inh/self.n_neur,
                 'inhibitory', horizontalalignment='center',
                 verticalalignment='center', transform=ax.transAxes,
                 bbox=dict(facecolor='wheat', alpha=0.9))
-            ax.set_xlabel('t [ms]')
+            ax.set_xlabel('$t$ [ms]')
             ax.set_ylabel('neuron ID')
             return (fig, ax)
 
