@@ -1,0 +1,3 @@
+# Current distribution along the wire
+
+- `DipolSctGnd025.str` - the current distribution along the straight thin wire scatterer of a finite length of 1m and the radius of 2 mm located at height of 0.25 m above a lossy half-space (σ = 10 mS/m, ε = 10) that is illuminated by a normally incident electromagnetic field operating on 150 and 300 MHz, respectively. The first column represents spatial points on the antenna. The second column holds operating frequencies, while the third and forth columns are real and imaginary current parts, respectively. Finally, the fifth column is the absolute current value. This data was obtained by solving the Pocklington equation numerically by means of indirect boundary element method with the in-house software - SuzANA .

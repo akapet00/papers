@@ -1,6 +1,8 @@
 import csv
 import os
 
+import matplotlib
+from matplotlib.transforms import Transform
 import numpy as np
 from scipy.integrate import odeint
 
@@ -47,9 +49,9 @@ def load_tissue_diel_properties(tissue, frequency):
         return (conductivity, relative_permitivity, loss_tangent, penetration_depth)
 
     
-def solve_bhte1d(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
-    """Numerical solution to 1-D Pennes' bioheat transfer equation by
-    using Fast Fourier Transform on spatial coordinate.
+def solve_bhte(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
+    """Numerical solution to the 1-D Pennes bioheat transfer equation
+    by using FFT on spatial coordinate.
     
     Parameters
     ----------
@@ -75,7 +77,7 @@ def solve_bhte1d(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
     Returns
     -------
     numpy.ndarray
-        temperature distribution in time for each collocation point
+        spatio-temporal temperature distribution
     """
     dx = pen_depth / N
     x = np.arange(0, pen_depth, dx)
@@ -105,3 +107,57 @@ def solve_bhte1d(t, N, pen_depth, k, rho, C, m_b, I_0, T_tr):
     for i in range(t.size):
         T[i, :] = np.fft.ifft(T_fft[i, :])
     return T.real
+
+
+class SqrtTransform(Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+
+    def transform_non_affine(self, a): 
+        return np.array(a)**0.5
+
+    def inverted(self):
+        return InvertedSqrtTransform()
+
+
+class InvertedSqrtTransform(Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+
+    def transform(self, a):
+        return np.array(a)**2
+
+    def inverted(self):
+        return SqrtTransform()
+
+
+class SqrtScale(matplotlib.scale.ScaleBase):
+    name = 'sqrt'
+
+    def __init__(self, axis, **kwargs):
+        super().__init__(axis, **kwargs)
+
+    def get_transform(self):
+        return SqrtTransform()
+
+    def set_default_locators_and_formatters(self, axis):
+        axis.set_major_locator(matplotlib.ticker.AutoLocator())
+        axis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        axis.set_minor_locator(matplotlib.ticker.NullLocator())
+        axis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    
+    
+def register_sqrt_scale():
+    """Register square-root axes scaler in the `matlab.scale`.
+
+    Parameters
+    ----------
+    None
+        
+    Returns
+    -------
+    None
+    """
+    matplotlib.scale.register_scale(SqrtScale)
