@@ -10,10 +10,10 @@ Author: Ante Lojic Kapetanovic
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import cumtrapz
 import seaborn
 
-seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
+seaborn.set(style='whitegrid', context='paper', palette='colorblind',
+            font='serif', font_scale=2)
 
 
 def generate_voltage(t, omega, V_0):
@@ -78,7 +78,7 @@ def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
         doped region
     phi : numpy.ndarray
         flux time series, unit=[Wb]
-    
+
     Returns
     -------
     numpy.ndarray
@@ -93,7 +93,7 @@ def generate_memristance(R_on, R_off, D, w_0, u_d, nu, phi):
     Q_0 = D ** 2 / (u_d * R_on)
     # memristance as a function of flux-linkage
     return R_0 * np.sqrt(1 - 2 * nu * R_d * phi / (Q_0 * R_0 ** 2))
-    
+
 
 def main():
     # generate voltage and calculate flux

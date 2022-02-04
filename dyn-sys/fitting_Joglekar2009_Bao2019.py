@@ -19,8 +19,8 @@ from scipy.optimize import minimize
 import seaborn
 
 
-seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
-
+seaborn.set(style='whitegrid', context='paper', palette='colorblind',
+            font='serif', font_scale=2)
 
 
 def sse(true, fit):
@@ -32,7 +32,7 @@ def sse(true, fit):
         measured data
     fit : float or numpy.ndarray
         fitted data
-    
+
     Returns
     -------
     float
@@ -81,8 +81,7 @@ def generate_memristance(phi, D, u_d, R_on):
         resistance of the fully doped memristor, unit=[Ohm]
     R_off : float
         resistance of the memristor if it is undoped, unit=[Ohm]
-    
-    
+
     Returns
     -------
     numpy.ndarray
@@ -147,7 +146,7 @@ def main():
                    method='Nelder-Mead',
                    options={'xtol': 1e-8})
     opt_params = res.x
-    print(f'\nFlux controled memristive device configuration:',
+    print('\nFlux controled memristive device configuration:',
           f'\n D    = {opt_params[0]:3e} Ohm',
           f'\n u_d  = {opt_params[1]:3e} m^2/Vs',
           f'\n R_on = {opt_params[2]:3e} Ohm')
@@ -156,13 +155,14 @@ def main():
     # visualization of I-V curves
     i = v / memristance
     i_fit = v / memristance_fit
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.plot(v, i, 'bo', ms=8, markevery=10, label='Bao et al.', zorder=2)
     ax.plot(v, i_fit, 'r-', lw=3, label='Joglekar et al.', zorder=1)
     ax.set(xlabel='$v$ [V]', ylabel='$i$ [A]')
     ax.legend()
     plt.tight_layout()
     plt.show()
+
 
 if __name__ == "__main__":
     main()

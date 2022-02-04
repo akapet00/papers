@@ -13,7 +13,8 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import seaborn
 
-seaborn.set(style='whitegrid', context='paper', palette='colorblind', font='serif', font_scale=2)
+seaborn.set(style='whitegrid', context='paper', palette='colorblind',
+            font='serif', font_scale=2)
 
 
 @njit
@@ -89,7 +90,7 @@ def cco(k, ic, *args):
     x_prime = k * alpha * (y - W(w, a, b) * x)
     y_prime = k * (z - x)
     z_prime = k / L * (-beta * y + gamma * z)
-    w_prime = k * x 
+    w_prime = k * x
     return (x_prime, y_prime, z_prime, w_prime)
 
 
@@ -233,7 +234,7 @@ def main():
     print(f'[lyap] Elapsed time: {end - start} s')
     dt = t[1] - t[0]
     lyap_lambda = [sum([l[i, j] for i in range(t.size)]) / (dt * t.size)
-        for j in range(4)]
+                   for j in range(4)]
     print(f'Lyapunov exponents: {lyap_lambda}')
 
 
